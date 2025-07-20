@@ -1,27 +1,47 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Server.Models;
+using SmartPlanner.Services;
+using System.Threading.Tasks;
 
-namespace Server.Controllers
+namespace SmartPlanner.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TaskController : ControllerBase
+    public class TasksController : ControllerBase
     {
-        private static List<TaskItem> tasks = new();
-        private static int nextId = 1;
+        private readonly TaskService _taskService;
 
-        [HttpPost]
-        public IActionResult AddTask([FromBody] TaskItem task)
+        public TasksController()
         {
-            task.Id = nextId++;
-            tasks.Add(task);
-            return Ok(tasks);
+            _taskService = new TaskService();
         }
 
         [HttpGet]
-        public IActionResult GetTasks()
+        public IActionResult Get() => Ok(_taskService.GetTodayTasks());
+
+        [HttpPost]
+        public IActionResult Post([FromBody] TaskItem task)
         {
-            return Ok(tasks);
+            _taskService.Add(task);
+            var updatedTasks = _taskService.GetTodayTasks();
+            return Ok(updatedTasks);
+        }
+
+        [HttpPut("{id}")]
+        public IActionResult Put(int id, [FromBody] TaskItem updatedTask)
+        {
+            var success = _taskService.Update(id, updatedTask);
+            if (!success) return NotFound();
+
+            return Ok(_taskService.GetTodayTasks());
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            _taskService.Delete(id);
+            var updatedTasks = _taskService.GetTodayTasks();
+            return Ok(updatedTasks);
         }
     }
 }
