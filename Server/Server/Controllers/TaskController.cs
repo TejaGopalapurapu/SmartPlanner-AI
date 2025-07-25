@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Server.Models;
 using SmartPlanner.Services;
-using System.Threading.Tasks;
 
 namespace SmartPlanner.Controllers
 {
@@ -11,9 +10,9 @@ namespace SmartPlanner.Controllers
     {
         private readonly TaskService _taskService;
 
-        public TasksController()
+        public TasksController(TaskService taskService)
         {
-            _taskService = new TaskService();
+            _taskService = taskService;
         }
 
         [HttpGet]
@@ -23,16 +22,15 @@ namespace SmartPlanner.Controllers
         public IActionResult Post([FromBody] TaskItem task)
         {
             _taskService.Add(task);
-            var updatedTasks = _taskService.GetTodayTasks();
-            return Ok(updatedTasks);
+            return Ok(_taskService.GetTodayTasks());
         }
 
         [HttpPut("{id}")]
         public IActionResult Put(int id, [FromBody] TaskItem updatedTask)
         {
-            var success = _taskService.Update(id, updatedTask);
+            updatedTask.Id = id;
+            bool success = _taskService.Update(updatedTask); // Explicitly declare the variable as bool
             if (!success) return NotFound();
-
             return Ok(_taskService.GetTodayTasks());
         }
 
@@ -40,8 +38,7 @@ namespace SmartPlanner.Controllers
         public IActionResult Delete(int id)
         {
             _taskService.Delete(id);
-            var updatedTasks = _taskService.GetTodayTasks();
-            return Ok(updatedTasks);
+            return Ok(_taskService.GetTodayTasks());
         }
     }
 }

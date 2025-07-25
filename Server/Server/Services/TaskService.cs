@@ -1,39 +1,49 @@
 ﻿using Server.Models;
 
-namespace SmartPlanner.Services
+namespace SmartPlanner.Services 
 {
     public class TaskService
     {
-        private static List<TaskItem> tasks = new();
+        private readonly AppDbContext _context;
 
-        public List<TaskItem> GetTodayTasks()
+        public TaskService(AppDbContext context)
         {
-            return tasks.Where(t => t.Date.Date == DateTime.Today).ToList();
+            _context = context;
         }
+
+        public List<TaskItem> GetTodayTasks() =>
+            _context.Tasks.Where(t => t.Date.Date == DateTime.Today).ToList();
 
         public void Add(TaskItem task)
         {
-            task.Id = tasks.Count + 1;
-            task.Date = DateTime.Today;
-            tasks.Add(task);
-        }
-
-        public bool Update(int id, TaskItem updatedTask)
-        {
-            var task = tasks.FirstOrDefault(t => t.Id == id);
-            if (task == null) return false;
-
-            task.Text = updatedTask.Text;
-            task.IsCompleted = updatedTask.IsCompleted;
-            task.Date = updatedTask.Date;
-
-            return true;
+            task.Date = DateTime.Now;
+            _context.Tasks.Add(task);
+            _context.SaveChanges();
         }
 
         public void Delete(int id)
         {
-            var task = tasks.FirstOrDefault(t => t.Id == id);
-            if (task != null) tasks.Remove(task);
+            var task = _context.Tasks.Find(id);
+            if (task != null)
+            {
+                _context.Tasks.Remove(task);
+                _context.SaveChanges();
+            }
         }
+
+        public bool Update(TaskItem updated)
+        {
+            var existing = _context.Tasks.Find(updated.Id);
+            if (existing != null)
+            {
+                existing.Text = updated.Text;
+                existing.IsCompleted = updated.IsCompleted;
+                _context.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+
     }
 }
